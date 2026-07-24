@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agriculture Crop Farming Mock Test</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: Arial, sans-serif; background: #f0f4f0; margin: 0; padding: 0; display: flex; justify-content: center; min-height: 100vh; }
+  .container { width: 100%; max-width: 480px; background: #fff; min-height: 100vh; padding: 20px; }
+  h1, h2 { color: #2e7d32; text-align: center; }
+  input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; }
+  button { width: 100%; padding: 14px; background: #2e7d32; color: #fff; border: none; border-radius: 6px; font-size: 16px; margin-top: 12px; cursor: pointer; }
+  button:disabled { background: #999; }
+  .error { color: red; text-align: center; margin-top: 10px; }
+  .hidden { display: none; }
+  .countdown-num { font-size: 80px; text-align: center; color: #2e7d32; margin: 40px 0 10px; }
+  .countdown-label { text-align: center; color: #555; }
+  .question-box { border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin-bottom: 15px; }
+  .question-box img { max-width: 100%; border-radius: 6px; margin: 10px 0; }
+  .option-label { display: block; padding: 10px; margin: 6px 0; border: 1px solid #ccc; border-radius: 6px; cursor: pointer; }
+  .option-label input { width: auto; margin-right: 8px; }
+  .timer { text-align: center; font-weight: bold; color: #d32f2f; margin-bottom: 15px; }
+  .result-box { text-align: center; padding: 20px; background: #e8f5e9; border-radius: 8px; margin-top: 20px; }
+  .loading { text-align: center; color: #555; margin-top: 20px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div id="screen-login">
+    <h1>Agriculture Crop Farming<br>Mock Test</h1>
+    <input type="text" id="loginId" placeholder="Student ID">
+    <input type="password" id="loginPass" placeholder="Password">
+    <button onclick="doLogin()">Login</button>
+    <div class="error" id="loginError"></div>
+  </div>
+  <div id="screen-info" class="hidden">
+    <h2>Student Information</h2>
+    <input type="text" id="infoName" placeholder="Full Name">
+    <input type="date" id="infoDob" placeholder="Date of Birth">
+    <input type="date" id="infoExamDate" placeholder="Exam Date">
+    <input type="text" id="infoCountry" placeholder="Country">
+    <button onclick="submitInfo()">Continue</button>
+    <div class="error" id="infoError"></div>
+  </div>
+  <div id="screen-setselect" class="hidden">
+    <h2>Select a Set</h2>
+    <div id="setButtons"></div>
+  </div>
+  <div id="screen-countdown" class="hidden">
+    <div class="countdown-num" id="countdownNum">10</div>
+    <div class="countdown-label">Exam questions uploading...</div>
+  </div>
+  <div id="screen-exam" class="hidden">
+    <div class="timer" id="examTimer"></div>
+    <div id="questionsArea"></div>
+    <button onclick="submitExam()">Submit Exam</button>
+  </div>
+  <div id="screen-result" class="hidden">
+    <div class="result-box">
+      <h2>Exam Submitted</h2>
+      <p id="resultText"></p>
+    </div>
+    <button onclick="location.reload()">Back to Login</button>
+  </div>
+  <div class="loading hidden" id="loadingMsg">Loading...</div>
+</div>
+<script>
+var API_URL = "https://script.google.com/macros/s/AKfycbxsn6mrTbN4kJ_l4drr3DekxlD8uJg2jF535qE9Qix-BA2aXxQCqQOEko6QQka4cJ69/exec";
+var state = { studentId: "", password: "", allowedSets: 0, name: "", dob: "", examDate: "", country: "", currentSet: null, questions: [], attemptNumber: 1, answers: {}, timerInterval: null };
+function showScreen(id) {
+  var screens = ["screen-login","screen-info","screen-setselect","screen-countdown","screen-exam","screen-result"];
+  screens.forEach(function(s) { document.getElementById(s).classList.add("hidden"); });
+  document.getElementById(id).classList.remove("hidden");
+}
+function setLoading(on) { document.getElementById("loadingMsg").classList.toggle("hidden", !on); }
+function apiCall(payload, callback) {
+  setLoading(true);
+  fetch(API_URL, { method: "POST", body: JSON.stringify(payload) })
+  .then(function(res) { return res.json(); })
+  .then(function(data) { setLoading(false); callback(data); })
+  .catch(function(err) { setLoading(false); alert("Network error. Please check your internet connection and try again."); console.error(err); });
+}
+function doLogin() {
+  var id = document.getElementById("loginId").value.trim();
+  var pass = document.getElementById("loginPass").value.trim();
+  document.getElementById("loginError").innerText = "";
+  if (!id || !pass) { document.getElementById("loginError").innerText = "Please enter ID and Password."; return; }
+  apiCall({ action: "login", studentId: id, password: pass }, function(data) {
+    if (data.success) { state.studentId = id; state.password = pass; state.allowedSets = data.allowedSets; showScreen("screen-info"); }
+    else { document.getElementById("loginError").innerText = data.message || "Login failed."; }
+  });
+}
+function submitInfo() {
+  var name = document.getElementById("infoName").value.trim();
+  var dob = document.getElementById("infoDob").value;
+  var examDate = document.getElementById("infoExamDate").value;
+  var country = document.getElementById("infoCountry").value.trim();
+  document.getElementById("infoError").innerText = "";
+  if (!name || !dob || !examDate || !country) { document.getElementById("infoError").innerText = "Please fill in all fields."; return; }
+  state.name = name; state.dob = dob; state.examDate = examDate; state.country = country;
+  apiCall({ action: "submitInfo", studentId: state.studentId, name: name, dob: dob, examDate: examDate, country: country }, function(data) {
+    if (data.success) { renderSetButtons(); showScreen("screen-setselect"); }
+    else { document.getElementById("infoError").innerText = data.message || "Something went wrong."; }
+  });
+}
+function renderSetButtons() {
+  var container = document.getElementById("setButtons");
+  container.innerHTML = "";
+  for (var i = 1; i <= state.allowedSets; i++) {
+    var btn = document.createElement("button");
+    btn.innerText = "Set " + i;
+    btn.onclick = (function(setNum) { return function() { startCountdown(setNum); }; })(i);
+    container.appendChild(btn);
+  }
+}
+function startCountdown(setNumber) {
+  state.currentSet = setNumber;
+  showScreen("screen-countdown");
+  var count = 10;
+  document.getElementById("countdownNum").innerText = count;
+  var interval = setInterval(function() {
+    count--;
+    document.getElementById("countdownNum").innerText = count >= 0 ? count : 0;
+    if (count <= 0) { clearInterval(interval); loadQuestions(setNumber); }
+  }, 1000);
+}
+function loadQuestions(setNumber) {
+  apiCall({ action: "getQuestions", studentId: state.studentId, setNumber: setNumber }, function(data) {
+    if (data.success) {
+      state.questions = data.questions; state.attemptNumber = data.attemptNumber; state.answers = {};
+      renderExam(); showScreen("screen-exam"); startExamTimer(30 * 60);
+    } else { alert(data.message || "Could not load questions."); showScreen("screen-setselect"); }
+  });
+}
+function renderExam() {
+  var area = document.getElementById("questionsArea");
+  area.innerHTML = "";
+  state.questions.forEach(function(q) {
+    var box = document.createElement("div");
+    box.className = "question-box";
+    var qTitle = document.createElement("p");
+    qTitle.innerHTML = "<strong>Q" + q.qNumber + ".</strong> " + q.text;
+    box.appendChild(qTitle);
+    if (q.imageLink) { var img = document.createElement("img"); img.src = q.imageLink; box.appendChild(img); }
+    ["A","B","C","D"].forEach(function(letter) {
+      var optText = q["option" + letter];
+      if (!optText) return;
+      var label = document.createElement("label");
+      label.className = "option-label";
+      var input = document.createElement("input");
+      input.type = "radio"; input.name = "q" + q.qNumber; input.value = letter;
+      input.onchange = function() { state.answers[q.qNumber] = letter; };
+      label.appendChild(input);
+      label.appendChild(document.createTextNode(optText));
+      box.appendChild(label);
+    });
+    area.appendChild(box);
+  });
+}
+function startExamTimer(seconds) {
+  var remaining = seconds;
+  updateTimerDisplay(remaining);
+  state.timerInterval = setInterval(function() {
+    remaining--; updateTimerDisplay(remaining);
+    if (remaining <= 0) { clearInterval(state.timerInterval); submitExam(); }
+  }, 1000);
+}
+function updateTimerDisplay(seconds) {
+  var m = Math.floor(seconds / 60); var s = seconds % 60;
+  document.getElementById("examTimer").innerText = "Time left: " + m + ":" + (s < 10 ? "0" : "") + s;
+}
+function submitExam() {
+  if (state.timerInterval) clearInterval(state.timerInterval);
+  apiCall({ action: "submitResult", studentId: state.studentId, name: state.name, examDate: state.examDate, country: state.country, setNumber: state.currentSet, attemptNumber: state.attemptNumber, answers: state.answers }, function(data) {
+    if (data.success) { document.getElementById("resultText").innerText = "Your Score: " + data.score + " / " + data.total; showScreen("screen-result"); }
+    else { alert(data.message || "Could not submit exam."); }
+  });
+}
+</script>
+</body>
+  </html>
