@@ -1,1 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agriculture Crop Farming Mock Test</title>
+<style>
+  * { margin:0; padding:0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #eef3f7; color: #12242e; line-height: 1.5; display: flex; justify-content: center; min-height: 100vh; }
+  .container { width: 100%; max-width: 480px; padding: 16px; }
 
+  header { background: linear-gradient(135deg,#00695c,#2e7d32); color: #fff; border-radius: 14px; text-align: center; margin-bottom: 18px; padding: 22px 18px; box-shadow: 0 4px 14px rgba(2,119,60,.25); }
+  header h1 { font-size: 1.35rem; margin-bottom: 6px; }
+  header p { font-size: .9rem; opacity: .95; }
+
+  .card { background: #fff; border-radius: 12px; padding: 18px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+
+  input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; }
+  label.field-label { display: block; margin-top: 10px; color: #333; font-weight: 700; font-size: 13px; }
+  .date-row { display: flex; gap: 6px; }
+  .date-row select { flex: 1; padding: 10px 4px; font-size: 14px; }
+
+  button { width: 100%; padding: 14px; background: linear-gradient(135deg,#00695c,#2e7d32); color: #fff; border: none; border-radius: 10px; font-size: 16px; font-weight: 700; margin-top: 12px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,105,92,.3); }
+  button:disabled { opacity: .6; }
+  .error { color: #d32f2f; text-align: center; margin-top: 10px; font-size: 14px; }
+  .hidden { display: none !important; }
+
+  .set-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .set-btn { background: #e3f6ee; border: 2px solid #00695c; border-radius: 12px; padding: 18px 10px; font-size: 1rem; font-weight: 700; color: #00695c; box-shadow: none; margin-top: 0; }
+  .set-btn:active { background: #c8f0dd; }
+
+  .countdown-num { font-size: 80px; text-align: center; color: #00695c; margin: 60px 0 10px; font-weight: 800; }
+  .countdown-label { text-align: center; color: #555; font-size: 1.05rem; }
+
+  #timerbar { position: sticky; top: 0; z-index: 50; background: #00695c; color: #fff; text-align: center; padding: 10px; font-weight: 700; font-size: 1rem; border-radius: 10px; margin-bottom: 14px; }
+  #timerbar.warn { background: #d32f2f; animation: blink 1s infinite; }
+  @keyframes blink { 50% { opacity: .6; } }
+
+  .info-bar { display: flex; justify-content: space-around; background: #fff; padding: 10px; border-radius: 10px; margin-bottom: 14px; font-size: .85rem; box-shadow: 0 2px 6px rgba(0,0,0,.06); }
+  .info-bar div { text-align: center; }
+  .info-bar strong { display: block; font-size: 1.05rem; color: #00695c; }
+
+  .q-card { background: #fff; padding: 16px; border-radius: 12px; margin-bottom: 14px; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+  .q-num { display: inline-block; background: #00695c; color: #fff; font-size: .72rem; padding: 3px 10px; border-radius: 20px; margin-bottom: 10px; }
+  .q-text { font-size: 1.02rem; font-weight: 600; margin-bottom: 12px; }
+  .q-card img { width: 100%; border-radius: 10px; border: 3px solid #b2dfdb; margin-bottom: 12px; display: block; }
+
+  .option-label { display: block; padding: 11px 14px; margin-bottom: 8px; border: 2px solid #a5d6c9; border-radius: 8px; cursor: pointer; font-size: .96rem; background: #e3f6ee; color: #0b3d2e; }
+  .option-label input { width: auto; margin-right: 10px; }
+
+  .result-box { background: #fff; padding: 26px 18px; border-radius: 14px; text-align: center; margin-bottom: 18px; box-shadow: 0 4px 14px rgba(0,0,0,.1); }
+  .result-box.pass { border-top: 6px solid #00695c; }
+  .result-box.fail { border-top: 6px solid #d32f2f; }
+  .result-score { font-size: 2.6rem; font-weight: 800; margin: 8px 0; }
+  .result-box.pass .result-score { color: #00695c; }
+  .result-box.fail .result-score { color: #d32f2f; }
+  .result-verdict { font-size: 1.3rem; font-weight: 700; margin-bottom: 6px; }
+  .result-box.pass .result-verdict { color: #00695c; }
+  .result-box.fail .result-verdict { color: #d32f2f; }
+  .result-detail { font-size: .95rem; color: #555; }
+
+  .loading { text-align: center; color: #555; margin-top: 16px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- LOGIN -->
+  <div id="screen-login">
+    <header>
+      <h1>🌾 Agriculture Crop Farming</h1>
+      <p>SSW Mock Test — Please login to continue</p>
+    </header>
+    <div class="card">
+      <input type="text" id="loginId" placeholder="Student ID">
+      <input type="password" id="loginPass" placeholder="Password">
+      <button onclick="doLogin()">Login</button>
+      <div class="error" id="loginError"></div>
+    </div>
+  </div>
+
+  <!-- STUDENT INFO -->
+  <div id="screen-info" class="hidden">
+    <div class="card">
+      <h2 style="text-align:center;color:#00695c;margin-bottom:10px;">Student Information</h2>
+      <input type="text" id="infoName" placeholder="Full Name">
+      <label class="field-label">Date of Birth</label>
+      <div class="date-row">
+        <select id="dobDay"></select>
+        <select id="dobMonth"></select>
+        <select id="dobYear"></select>
+      </div>
+      <label class="field-label">Exam Date</label>
+      <div class="date-row">
+        <select id="examDay"></select>
+        <select id="examMonth"></select>
+        <select id="examYear"></select>
+      </div>
+      <input type="text" id="infoCountry" placeholder="Country">
+      <button onclick="submitInfo()">Continue</button>
+      <div class="error" id="infoError"></div>
+    </div>
+  </div>
+
+  <!-- SET SELECTION -->
+  <div id="screen-setselect" class="hidden">
+    <header>
+      <h1>🌾 Crop Farming Mock Test</h1>
+      <p>Select a set — each set has 30 questions, 1 hour, pass mark 65%</p>
+    </header>
+    <div class="set-grid" id="setButtons"></div>
+  </div>
+
+  <!-- COUNTDOWN -->
+  <div id="screen-countdown" class="hidden">
+    <div class="countdown-num" id="countdownNum">10</div>
+    <div class="countdown-label">Exam questions uploading...</div>
+  </div>
+
+  <!-- EXAM -->
+  <div id="screen-exam" class="hidden">
+    <div id="timerbar">Time left: <span id="examTimer">60:00</span></div>
+    <div class="info-bar">
+      <div><strong id="infoQNum">30</strong>Questions</div>
+      <div><strong>65%</strong>Pass Mark</div>
+      <div><strong>1 hr</strong>Duration</div>
+    </div>
+    <div id="questionsArea"></div>
+    <button onclick="submitExam()">Submit Exam</button>
+  </div>
+
+  <!-- RESULT -->
+  <div id="screen-result" class="hidden">
+    <div class="result-box" id="resultBox">
+      <div class="result-verdict" id="resultVerdict">Exam Submitted</div>
+      <div class="result-score" id="resultScore"></div>
+      <div class="result-detail" id="resultDetail"></div>
+    </div>
+    <button onclick="location.reload()">Back to Login</button>
+  </div>
+
+  <div class="loading hidden" id="loadingMsg">Loading...</div>
+
+</div>
+
+<script>
+var API_URL = "https://script.google.com/macros/s/AKfycbxsn6mrTbN4kJ_l4drr3DekxlD8uJg2jF535qE9Qix-BA2aXxQCqQOEko6QQka4cJ69/exec";
+
+var EXAM_DURATION_SECONDS = 60 * 60; // 1 hour
+var PASS_PERCENT = 65;
+
+var state = {
+  studentId: "", password: "", allowedSets: 0,
+  name: "", dob: "", examDate: "", country: "",
+  currentSet: null, questions: [], attemptNumber: 1,
+  answers: {}, timerInterval: null
+};
+
+function showScreen(id) {
+  var screens = ["screen-login","screen-info","screen-setselect","screen-countdown","screen-exam","screen-result"];
+  screens.forEach(function(s) { document.getElementById(s).classList.add("hidden"); });
+  document.getElementById(id).classList.remove("hidden");
+}
+
+function setLoading(on) { document.getElementById("loadingMsg").classList.toggle("hidden", !on); }
+
+function apiCall(payload, callback) {
+  setLoading(true);
+  fetch(API_URL, { method: "POST", body: JSON.stringify(payload) })
+  .then(function(res) { return res.json(); })
+  .then(function(data) { setLoading(false); callback(data); })
+  .catch(function(err) {
+    setLoading(false);
+    alert("Network error. Please check your internet connection and try again.");
+    console.error(err);
+  });
+}
+
+// ===== LOGIN =====
+function doLogin() {
+  var id = document.getElementById("loginId").value.trim();
+  var pass = document.getElementById("loginPass").value.trim();
+  document.getElementById("loginError").innerText = "";
+  if (!id || !pass) { document.getElementById("loginError").innerText = "Please enter ID and Password."; return; }
+  apiCall({ action: "login", studentId: id, password: pass }, function(data) {
+    if (data.success) {
+      state.studentId = id; state.password = pass; state.allowedSets = data.allowedSets;
+      populateDateDropdowns();
+      showScreen("screen-info");
+    } else {
+      document.getElementById("loginError").innerText = data.message || "Login failed.";
+    }
+  });
+}
+
+// ===== DATE DROPDOWNS =====
+function pad2(n) { return (n < 10 ? "0" : "") + n; }
+
+function populateDateDropdowns() {
+  var days = document.querySelectorAll("#dobDay, #examDay");
+  var months = document.querySelectorAll("#dobMonth, #examMonth");
+  var years = document.querySelectorAll("#dobYear, #examYear");
+  var monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  var currentYear = new Date().getFullYear();
+
+  days.forEach(function(sel) {
+    sel.innerHTML = '<option value="">Day</option>';
+    for (var d = 1; d <= 31; d++) {
+      var opt = document.createElement("option");
+      opt.value = pad2(d); opt.innerText = d;
+      sel.appendChild(opt);
+    }
+  });
+  months.forEach(function(sel) {
+    sel.innerHTML = '<option value="">Month</option>';
+    monthNames.forEach(function(m, i) {
+      var opt = document.createElement("option");
+      opt.value = pad2(i + 1); opt.innerText = m;
+      sel.appendChild(opt);
+    });
+  });
+  years.forEach(function(sel) {
+    sel.innerHTML = '<option value="">Year</option>';
+    for (var y = currentYear + 2; y >= currentYear - 80; y--) {
+      var opt = document.createElement("option");
+      opt.value = y; opt.innerText = y;
+      sel.appendChild(opt);
+    }
+  });
+}
+
+// ===== STUDENT INFO =====
+function submitInfo() {
+  var name = document.getElementById("infoName").value.trim();
+  var dobDay = document.getElementById("dobDay").value;
+  var dobMonth = document.getElementById("dobMonth").value;
+  var dobYear = document.getElementById("dobYear").value;
+  var examDay = document.getElementById("examDay").value;
+  var examMonth = document.getElementById("examMonth").value;
+  var examYear = document.getElementById("examYear").value;
+  var country = document.getElementById("infoCountry").value.trim();
+  document.getElementById("infoError").innerText = "";
+
+  if (!name || !dobDay || !dobMonth || !dobYear || !examDay || !examMonth || !examYear || !country) {
+    document.getElementById("infoError").innerText = "Please fill in all fields.";
+    return;
+  }
+
+  var dob = dobDay + "/" + dobMonth + "/" + dobYear;
+  var examDate = examDay + "/" + examMonth + "/" + examYear;
+
+  state.name = name; state.dob = dob; state.examDate = examDate; state.country = country;
+
+  apiCall({
+    action: "submitInfo",
+    studentId: state.studentId,
+    name: name, dob: dob, examDate: examDate, country: country
+  }, function(data) {
+    if (data.success) {
+      renderSetButtons();
+      showScreen("screen-setselect");
+    } else {
+      document.getElementById("infoError").innerText = data.message || "Something went wrong.";
+    }
+  });
+}
+
+// ===== SET SELECTION =====
+function renderSetButtons() {
+  var container = document.getElementById("setButtons");
+  container.innerHTML = "";
+  for (var i = 1; i <= state.allowedSets; i++) {
+    var btn = document.createElement("button");
+    btn.className = "set-btn";
+    btn.innerText = "Set " + i;
+    btn.onclick = (function(setNum) { return function() { startCountdown(setNum); }; })(i);
+    container.appendChild(btn);
+  }
+}
+
+// ===== COUNTDOWN =====
+function startCountdown(setNumber) {
+  state.currentSet = setNumber;
+  showScreen("screen-countdown");
+  var count = 10;
+  document.getElementById("countdownNum").innerText = count;
+  var interval = setInterval(function() {
+    count--;
+    document.getElementById("countdownNum").innerText = count >= 0 ? count : 0;
+    if (count <= 0) {
+      clearInterval(interval);
+      loadQuestions(setNumber);
+    }
+  }, 1000);
+}
+
+// ===== LOAD QUESTIONS =====
+function loadQuestions(setNumber) {
+  apiCall({
+    action: "getQuestions",
+    studentId: state.studentId,
+    setNumber: setNumber
+  }, function(data) {
+    if (data.success) {
+      state.questions = data.questions;
+      state.attemptNumber = data.attemptNumber;
+      state.answers = {};
+      document.getElementById("infoQNum").innerText = state.questions.length;
+      renderExam();
+      showScreen("screen-exam");
+      startExamTimer(EXAM_DURATION_SECONDS);
+    } else {
+      alert(data.message || "Could not load questions.");
+      showScreen("screen-setselect");
+    }
+  });
+}
+
+// ===== RENDER EXAM =====
+function renderExam() {
+  var area = document.getElementById("questionsArea");
+  area.innerHTML = "";
+  state.questions.forEach(function(q, idx) {
+    var box = document.createElement("div");
+    box.className = "q-card";
+
+    var qNum = document.createElement("span");
+    qNum.className = "q-num";
+    qNum.innerText = "Question " + (idx + 1) + " of " + state.questions.length;
+    box.appendChild(qNum);
+
+    var qTitle = document.createElement("p");
+    qTitle.className = "q-text";
+    qTitle.innerText = q.text;
+    box.appendChild(qTitle);
+
+    if (q.imageLink) {
+      var img = document.createElement("img");
+      img.src = q.imageLink;
+      box.appendChild(img);
+    }
+
+    ["A","B","C","D"].forEach(function(letter) {
+      var optText = q["option" + letter];
+      if (!optText) return;
+      var label = document.createElement("label");
+      label.className = "option-label";
+      var input = document.createElement("input");
+      input.type = "radio";
+      input.name = "q" + q.qNumber;
+      input.value = letter;
+      input.onchange = function() {
+        state.answers[q.qNumber] = letter;
+      };
+      label.appendChild(input);
+      label.appendChild(document.createTextNode(optText));
+      box.appendChild(label);
+    });
+
+    area.appendChild(box);
+  });
+}
+
+// ===== TIMER =====
+function startExamTimer(seconds) {
+  var remaining = seconds;
+  updateTimerDisplay(remaining);
+  state.timerInterval = setInterval(function() {
+    remaining--;
+    updateTimerDisplay(remaining);
+    if (remaining <= 300) {
+      document.getElementById("timerbar").classList.add("warn");
+    }
+    if (remaining <= 0) {
+      clearInterval(state.timerInterval);
+      submitExam();
+    }
+  }, 1000);
+}
+
+function updateTimerDisplay(seconds) {
+  var m = Math.floor(seconds / 60);
+  var s = seconds % 60;
+  document.getElementById("examTimer").innerText =
+    (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s;
+}
+
+// ===== SUBMIT EXAM =====
+function submitExam() {
+  if (state.timerInterval) clearInterval(state.timerInterval);
+
+  apiCall({
+    action: "submitResult",
+    studentId: state.studentId,
+    name: state.name,
+    examDate: state.examDate,
+    country: state.country,
+    setNumber: state.currentSet,
+    attemptNumber: state.attemptNumber,
+    answers: state.answers
+  }, function(data) {
+    if (data.success) {
+      showResult(data.score, data.total);
+    } else {
+      alert(data.message || "Could not submit exam.");
+    }
+  });
+}
+
+function showResult(score, total) {
+  var percent = total > 0 ? Math.round((score / total) * 100) : 0;
+  var passed = percent >= PASS_PERCENT;
+
+  var box = document.getElementById("resultBox");
+  box.className = "result-box " + (passed ? "pass" : "fail");
+
+  document.getElementById("resultVerdict").innerText = passed ? "PASS" : "FAIL";
+  document.getElementById("resultScore").innerText = score + " / " + total;
+  document.getElementById("resultDetail").innerText =
+    "You scored " + percent + "%. Pass mark is " + PASS_PERCENT + "%.";
+
+  showScreen("screen-result");
+}
+</script>
+</body>
+</html>
